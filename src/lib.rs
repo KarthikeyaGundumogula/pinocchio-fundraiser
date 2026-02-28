@@ -34,10 +34,9 @@ pub fn process_instruction(
         FundraiseInstrctions::CheckContribution => {
             instructions::checker::process_checkout(accounts, data)?
         }
-        // FundraiseInstrctions::Refund => {
-        //     instructions::refund::process_refund_instruction(accounts, data)?
-        // }
-        _ => Err(ProgramError::InvalidInstructionData)?,
+        FundraiseInstrctions::Refund => {
+            instructions::refund::process_refund(accounts, data)?
+        }
     };
     Ok(())
 }

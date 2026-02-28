@@ -115,3 +115,27 @@ pub fn send_checkout_transaction(ctx: &mut TestContext) {
 
     send_transaction(&mut ctx.svm, checkout_inx, &[&ctx.maker], &maker_pubkey);
 }
+
+pub fn send_refund_transaction(ctx: &mut TestContext) {
+    let ix_data = [vec![3u8], ctx.contribution_bump.to_le_bytes().to_vec()].concat();
+    let refund_ix = Instruction {
+        program_id: program_id(),
+        accounts: vec![
+            AccountMeta::new(ctx.donar.pubkey(), true),
+            AccountMeta::new(ctx.maker.pubkey(), false),
+            AccountMeta::new(ctx.mint, false),
+            AccountMeta::new(ctx.fundraiser, false),
+            AccountMeta::new(ctx.contribution, false),
+            AccountMeta::new(ctx.donar_ata, false),
+            AccountMeta::new(ctx.vault_ata, false),
+            AccountMeta::new(TOKEN_PROGRAM_ID, false),
+            AccountMeta::new(ctx.system_program, false),
+        ],
+        data: ix_data,
+    };
+    let contributor_pubkey = ctx.donar.pubkey();
+    for (index, account) in refund_ix.accounts.iter().enumerate() {
+        println!("Account {}: {}", index, account.pubkey);
+    }
+    send_transaction(&mut ctx.svm, refund_ix, &[&ctx.donar], &contributor_pubkey);
+}

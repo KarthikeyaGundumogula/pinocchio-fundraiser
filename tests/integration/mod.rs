@@ -6,6 +6,7 @@ use crate::{
     fixtures::{AMOUNT_TO_RAISE, DONATION_AMOUNT, DURATION_IN_DAYS},
     instructions::{
         send_checkout_transaction, send_contribution_transaction, send_initialize_transaction,
+        send_refund_transaction,
     },
     setup,
     utils::set_clock,
@@ -58,6 +59,37 @@ pub fn test_checkout_inx() {
     let maker_ata: Account =
         get_spl_account(&ctx.svm, &ctx.maker_ata).expect("token account not found");
     assert_eq!(maker_ata.amount, AMOUNT_TO_RAISE);
+}
+
+#[test]
+pub fn test_refund_inx() {
+    let mut ctx = setup();
+    set_clock(&mut ctx.svm, 1000);
+    send_initialize_transaction(&mut ctx);
+    send_contribution_transaction(&mut ctx, DONATION_AMOUNT);
+    set_clock(&mut ctx.svm, DURATION_IN_DAYS as i64 * 86_400 * 2);
+    let donar_ata_before: Account =
+        get_spl_account(&ctx.svm, &ctx.donar_ata).expect("token account not found");
+    send_refund_transaction(&mut ctx);
+    let donar_ata_after: Account =
+        get_spl_account(&ctx.svm, &ctx.donar_ata).expect("token account not found");
+    assert!(donar_ata_after.amount > donar_ata_before.amount)
+}
+
+#[should_panic]
+#[test]
+pub fn test_refund_inx_fails_if_amount_reached() {
+    let mut ctx = setup();
+    set_clock(&mut ctx.svm, 1000);
+    send_initialize_transaction(&mut ctx);
+    send_contribution_transaction(&mut ctx, AMOUNT_TO_RAISE);
+    set_clock(&mut ctx.svm, DURATION_IN_DAYS as i64 * 86_400 * 2);
+    let donar_ata_before: Account =
+        get_spl_account(&ctx.svm, &ctx.donar_ata).expect("token account not found");
+    send_refund_transaction(&mut ctx);
+    let donar_ata_after: Account =
+        get_spl_account(&ctx.svm, &ctx.donar_ata).expect("token account not found");
+    assert!(donar_ata_after.amount > donar_ata_before.amount)
 }
 
 #[should_panic]
