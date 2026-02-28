@@ -28,9 +28,9 @@ pub fn process_instruction(
         FundraiseInstrctions::Initialize => {
             instructions::initialize::process_initialize(accounts, data)?
         }
-        // FundraiseInstrctions::Contribute => {
-        //     instructions::take::process_take_instruction(accounts, data)?
-        // }
+        FundraiseInstrctions::Contribute => {
+            instructions::contiribute::process_contribution(accounts, data)?
+        }
         // FundraiseInstrctions::Refund => {
         //     instructions::refund::process_refund_instruction(accounts, data)?
         // }

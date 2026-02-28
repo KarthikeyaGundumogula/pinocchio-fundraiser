@@ -45,3 +45,46 @@ pub fn send_initialize_transaction(ctx: &mut TestContext) {
 
     send_transaction(&mut ctx.svm, init_ix, &[&ctx.maker], &maker_pubkey);
 }
+
+pub fn send_contribution_transaction(ctx: &mut TestContext, amount: u64) {
+    let amount_bytes: [u8; 8] = {
+        let mut arr = [0u8; 8];
+        arr[..8].copy_from_slice(&amount.to_le_bytes());
+        arr
+    };
+
+    let contribution_data = [
+        vec![1u8],
+        ctx.contribution_bump.to_le_bytes().to_vec(),
+        amount_bytes.to_vec(),
+    ]
+    .concat();
+
+    let contribution_ix = Instruction {
+        program_id: program_id(),
+        accounts: vec![
+            AccountMeta::new(ctx.donar.pubkey(), true),
+            AccountMeta::new(ctx.mint, false),
+            AccountMeta::new(ctx.fundraiser, false),
+            AccountMeta::new(ctx.donar_ata, false),
+            AccountMeta::new(ctx.contribution, false),
+            AccountMeta::new(ctx.vault_ata, false),
+            AccountMeta::new(TOKEN_PROGRAM_ID, false),
+            AccountMeta::new(ctx.system_program, false),
+        ],
+        data: contribution_data,
+    };
+
+    let contributor_pubkey = ctx.donar.pubkey();
+
+    for (index, account) in contribution_ix.accounts.iter().enumerate() {
+        println!("Account {}: {}", index, account.pubkey);
+    }
+
+    send_transaction(
+        &mut ctx.svm,
+        contribution_ix,
+        &[&ctx.donar],
+        &contributor_pubkey,
+    );
+}

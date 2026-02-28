@@ -23,7 +23,9 @@ pub struct TestContext {
     pub maker_ata: Pubkey,
     pub donar_ata: Pubkey,
     pub fundraiser: Pubkey,
+    pub contribution: Pubkey,
     pub fundraiser_bump: u8,
+    pub contribution_bump: u8,
     pub vault_ata: Pubkey,
     pub associated_token_program: Pubkey,
     pub system_program: Pubkey,
@@ -65,11 +67,19 @@ pub fn setup() -> TestContext {
         .unwrap();
 
 
-    // Derive escrow PDA and vault
+    // Derive fundraise PDA and vault
     let (fundraiser, fundraiser_bump) = Pubkey::find_program_address(
         &[b"fundraiser".as_ref(), maker.pubkey().as_ref()],
         &program_id(),
     );
+
+    // Derive contribution PDA
+    let (contribution, contribution_bump) = Pubkey::find_program_address(
+        &[b"contributor".as_ref(), fundraiser.as_ref(), donar.pubkey().as_ref()],
+        &program_id(),
+    );
+
+
 
     let vault_ata = spl_associated_token_account::get_associated_token_address(&fundraiser, &mint);
 
@@ -89,7 +99,9 @@ pub fn setup() -> TestContext {
         donar_ata,
         maker_ata,
         fundraiser,
+        contribution,
         fundraiser_bump,
+        contribution_bump,
         vault_ata,
         associated_token_program,
         system_program,
