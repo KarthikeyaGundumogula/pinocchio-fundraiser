@@ -4,7 +4,10 @@ use pinocchio::{
     error::ProgramError,
     sysvars::{Sysvar, clock::Clock, rent::Rent},
 };
+
+#[allow(unused)]
 use pinocchio_log::log;
+
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::CreateAccount;
 use wincode::SchemaRead;
@@ -39,7 +42,7 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
     // 1. mint matches wiht the fundraiser stored ata and contributor ata
     // 2. contributor pda matching
     // 3. vault ata owner check
-    // 4. reson for not validating the fundraiser_acc its okay if the given fundraise mint is matched with the vault ata and anyways we are checking for the owner and the mint stored in that pda
+    // 4. reason for not validating the fundraiser_acc its okay if the given fundraise mint is matched with the vault ata and anyways we are checking for the owner and the mint stored in that pda
 
     let ix_data = ::wincode::deserialize::<ContributeData>(data)
         .map_err(|_| ProgramError::InvalidInstructionData)?;
@@ -49,24 +52,11 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
         let vault_ata_state = pinocchio_token::state::TokenAccount::from_account_view(vault_ata)?;
         let mint_state = pinocchio_token::state::Mint::from_account_view(mint)?;
 
-        let (
-            fundraiser_mint,
-            fundraiser_amount_to_raise,
-            fundraiser_duration,
-            fundraiser_time_started,
-        ) = {
-            let fundraise_data = unsafe { fundraiser_acc.borrow_unchecked() };
-            let fundraise_state = ::wincode::deserialize::<Fundraiser>(fundraise_data)
-                .map_err(|_| ProgramError::InvalidAccountData)?;
-            (
-                fundraise_state.mint,
-                fundraise_state.amount_to_raise,
-                fundraise_state.duration,
-                fundraise_state.time_started,
-            )
-        };
+        let fundraise_data = unsafe { fundraiser_acc.borrow_unchecked() };
+        let fundraise_state = ::wincode::deserialize::<Fundraiser>(fundraise_data)
+            .map_err(|_| ProgramError::InvalidAccountData)?;
 
-        if fundraiser_mint != *mint.address().as_array()
+        if fundraise_state.mint != *mint.address().as_array()
             || contributor_ata_state.mint() != mint.address()
         {
             return Err(ProgramError::InvalidArgument);
@@ -82,8 +72,9 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
 
         let current_time = Clock::get()?.unix_timestamp.to_le_bytes();
         assert!(
-            fundraiser_duration
-                > ((u64::from_le_bytes(current_time) - u64::from_le_bytes(fundraiser_time_started))
+            fundraise_state.duration
+                > ((u64::from_le_bytes(current_time)
+                    - u64::from_le_bytes(fundraise_state.time_started))
                     / SECONDS_TO_DAYS) as u8,
             "Fundraise Duration is Over"
         );
@@ -123,7 +114,6 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
                 owner: &crate::ID,
             }
             .invoke_signed(&[contribution_signer])?;
-            log!("Contribution account");
 
             let contribution_state = Contribution::from_account_info(contribution_acc)?;
             contribution_state.amount = ix_data.amount;
@@ -132,7 +122,7 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
             let new_amount = contribution_state.amount + ix_data.amount;
             assert!(
                 new_amount
-                    <= (u64::from_le_bytes(fundraiser_amount_to_raise))
+                    <= (u64::from_le_bytes(fundraise_state.amount_to_raise))
                         * MAX_CONTRIBUTION_PERCENTAGE
                         / PERCENTAGE_SCALER,
                 "new amount is exceeding the threshold"
@@ -141,6 +131,8 @@ pub fn process_contribution(accounts: &[AccountView], data: &[u8]) -> ProgramRes
         } else {
             return Err(ProgramError::IllegalOwner);
         }
+        let update = u64::from_le_bytes(fundraise_state.current_amount) + ix_data.amount;
+        Fundraiser::from_account_info(fundraiser_acc)?.current_amount = update.to_le_bytes();
     }
     pinocchio_token::instructions::Transfer {
         from: contributor_ata,

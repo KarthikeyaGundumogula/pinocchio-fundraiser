@@ -4,7 +4,10 @@ use pinocchio::{
     error::ProgramError,
     sysvars::{Sysvar, clock::Clock, rent::Rent},
 };
+
+#[allow(unused)]
 use pinocchio_log::log;
+
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::CreateAccount;
 use wincode::SchemaRead;
@@ -47,7 +50,6 @@ pub fn process_initialize(accounts: &[AccountView], data: &[u8]) -> ProgramResul
     let seed = [b"fundraiser".as_ref(), maker.address().as_ref(), &[bump]];
     let fundraiser_account_pda = derive_address(&seed, None, &crate::ID.to_bytes());
 
-    log!("fundraiser pda derived");
     assert_eq!(fundraiser_account_pda, *fundraiser.address().as_array());
 
     let bump = [bump];
@@ -90,9 +92,9 @@ pub fn process_initialize(accounts: &[AccountView], data: &[u8]) -> ProgramResul
         funding_account: maker,
         account: vault_ata,
         wallet: fundraiser,
-        mint: mint,
-        token_program: token_program,
-        system_program: system_program,
+        mint,
+         token_program,
+         system_program,
     }
     .invoke()?;
 

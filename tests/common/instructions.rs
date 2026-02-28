@@ -2,7 +2,7 @@ use solana_sdk::message::{AccountMeta, Instruction};
 use solana_sdk::signer::Signer;
 
 use crate::fixtures::TOKEN_PROGRAM_ID;
-use crate::send_transaction;
+use crate::utils::send_transaction;
 use crate::{
     TestContext,
     fixtures::{AMOUNT_TO_RAISE, DURATION_IN_DAYS, program_id},
@@ -87,4 +87,31 @@ pub fn send_contribution_transaction(ctx: &mut TestContext, amount: u64) {
         &[&ctx.donar],
         &contributor_pubkey,
     );
+}
+
+pub fn send_checkout_transaction(ctx: &mut TestContext) {
+    let ix_data = [vec![2u8]].concat();
+
+    let checkout_inx = Instruction {
+        program_id: program_id(),
+        accounts: vec![
+            AccountMeta::new(ctx.maker.pubkey(), true),
+            AccountMeta::new(ctx.mint, false),
+            AccountMeta::new(ctx.fundraiser, false),
+            AccountMeta::new(ctx.vault_ata, false),
+            AccountMeta::new(ctx.maker_ata, false),
+            AccountMeta::new(TOKEN_PROGRAM_ID, false),
+            AccountMeta::new(ctx.system_program, false),
+            AccountMeta::new(ctx.associated_token_program, false),
+        ],
+        data: ix_data,
+    };
+
+    let maker_pubkey = ctx.maker.pubkey();
+
+    for (index, account) in checkout_inx.accounts.iter().enumerate() {
+        println!("Account {}: {}", index, account.pubkey);
+    }
+
+    send_transaction(&mut ctx.svm, checkout_inx, &[&ctx.maker], &maker_pubkey);
 }

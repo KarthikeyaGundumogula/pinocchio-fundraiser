@@ -3,8 +3,8 @@ pub mod contiribute;
 pub mod initialize;
 pub mod refund;
 
-// pub use checker::*;
-// pub use contiribute::*;
+pub use checker::*;
+pub use contiribute::*;
 pub use initialize::*;
 // pub use refund::*;
 
@@ -24,8 +24,8 @@ impl TryFrom<&u8> for FundraiseInstrctions {
         match value {
             0 => Ok(FundraiseInstrctions::Initialize),
             1 => Ok(FundraiseInstrctions::Contribute),
-            2 => Ok(FundraiseInstrctions::Refund),
-            3 => Ok(FundraiseInstrctions::CheckContribution),
+            2 => Ok(FundraiseInstrctions::CheckContribution),
+            3 => Ok(FundraiseInstrctions::Refund),
             _ => Err(ProgramError::InvalidInstructionData),
         }
     }

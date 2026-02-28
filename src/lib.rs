@@ -31,11 +31,11 @@ pub fn process_instruction(
         FundraiseInstrctions::Contribute => {
             instructions::contiribute::process_contribution(accounts, data)?
         }
+        FundraiseInstrctions::CheckContribution => {
+            instructions::checker::process_checkout(accounts, data)?
+        }
         // FundraiseInstrctions::Refund => {
         //     instructions::refund::process_refund_instruction(accounts, data)?
-        // }
-        // FundraiseInstrctions::CheckContribution => {
-        //     instructions::wincode_v2::make::process_make_v2_instruction(accounts, data)?
         // }
         _ => Err(ProgramError::InvalidInstructionData)?,
     };

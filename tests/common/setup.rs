@@ -5,15 +5,13 @@ use litesvm_token::{
     CreateAssociatedTokenAccount, CreateMint, MintTo,
 };
 use solana_sdk::{
-    message::{Instruction, Message},
     native_token::LAMPORTS_PER_SOL,
     pubkey::Pubkey,
     signature::Keypair,
     signer::Signer,
-    transaction::Transaction,
 };
 
-use crate::fixtures::{ASSOCIATED_TOKEN_PROGRAM_ID, program_id};
+use crate::fixtures::{AMOUNT_TO_RAISE, ASSOCIATED_TOKEN_PROGRAM_ID, program_id};
 
 pub struct TestContext {
     pub svm: LiteSVM,
@@ -84,7 +82,7 @@ pub fn setup() -> TestContext {
     let vault_ata = spl_associated_token_account::get_associated_token_address(&fundraiser, &mint);
 
     // Mint tokens to donar
-    MintTo::new(&mut svm, &donar, &mint, &donar_ata, 1_000_000_000)
+    MintTo::new(&mut svm, &donar, &mint, &donar_ata, 2 * AMOUNT_TO_RAISE)
         .send()
         .unwrap();
 
@@ -108,12 +106,3 @@ pub fn setup() -> TestContext {
     }
 }
 
-pub fn send_transaction(svm: &mut LiteSVM, ix: Instruction, signers: &[&Keypair], payer: &Pubkey) {
-    let message = Message::new(&[ix], Some(payer));
-    let recent_blockhash = svm.latest_blockhash();
-    let transaction = Transaction::new(signers, message, recent_blockhash);
-    let tx = svm
-        .send_transaction(transaction)
-        .expect("Transaction should succeed");
-    println!("CUs Consumed: {}", tx.compute_units_consumed);
-}
